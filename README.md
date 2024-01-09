@@ -1,5 +1,7 @@
 # PS4 PKG Manager
 
+![pkg_manager](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/6c9eca5b-4df9-4286-bfb8-3ee3d3c19c69)
+
 This is an application, primarily made for Linux and macOS, to manage PS4 PKG files by storing their metadata in a database. This means that, once scanned, the PKG collection can be viewed without requiring physical access to the PKG files. The user can select list items and operate on them via a context menu. The context menu can be extended with custom commands ("Custom Actions"), to integrate 3rd party tools that accept command line arguments.
 
 The application is not finished yet, but it is already in a usable state. Don't let the unfinished state discourage you from trying it out: there is no functionality included to move, change, or delete PKG files. I'm putting it online now as a beta version because as the project is becoming more complex I believe it could greatly profit from bug reports, different opinions/ideas, and from code contributions. Ideally, it becomes a community project with multiple collaborators.
@@ -7,15 +9,26 @@ The application is not finished yet, but it is already in a usable state. Don't 
 ## Some functions in more detail
 
 ### PKG Properties
+![properties](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/0869344b-c428-469e-8e8c-caf6c7ca17a9)
 
 The properties window contains several tabs that display more detailed information about the PKG. It can be opened from the context menu or by double-clicking a list item.
 
 ### Custom Actions
 
+![custom_actions](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/38243484-96a1-4599-9f26-acab5af95936)
+
 The PS4 scene has created quite a few tools that operate on PKG files, so that's where Custom Actions come in. They extend the context menu so that external tools can be run on the current PKG selection.  
-Custom Actions can be modified without having to run the program. They are stored in the text file "actions.txt", whose exact location you can find by opening the application menu's "About" dialog. The first '|' character delimits name and command.
+Custom Actions can be modified without having to run PKG Manager. They are stored in the text file "actions.txt", whose exact location you can find by opening the application menu's "About" dialog. The first '|' character delimits name and command.
+
+### Tabs
+
+![tabs](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/c0699ced-20f0-4fde-9789-d9f9a3fe845e)
+
+Manage different PKG lists for different purposes.
 
 ### Synchronized Directories
+
+![synchronized_directories](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/9cf092a8-6526-4f86-8e7f-d77b92267e86)
 
 Found by pressing the "Table Settings" button, this feature monitors the listed directories for PKG files and will add them to the table as soon as they're created, modified, or deleted. If a directory's checkbox is selected, the directory will have all its subdirectories monitored as well.
 
