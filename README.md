@@ -6,6 +6,8 @@ This is an application, primarily made for Linux and macOS, to manage PS4 PKG fi
 
 The application is not finished yet, but it is already in a usable state. Don't let the unfinished state discourage you from trying it out: there is no functionality included to move, change, or delete PKG files. I'm putting it online now as a beta version because as the project is becoming more complex I believe it could greatly profit from bug reports, different opinions/ideas, and from code contributions. Ideally, it becomes a community project with multiple collaborators.
 
+Please report any bugs by creating an issue at https://github.com/hippie68/ps4-pkg-manager/issues.
+
 ## Some functions in more detail
 
 ### PKG Properties
@@ -18,7 +20,8 @@ The properties window contains several tabs that display more detailed informati
 ![custom_actions](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/38243484-96a1-4599-9f26-acab5af95936)
 
 The PS4 scene has created quite a few tools that operate on PKG files, so that's where Custom Actions come in. They extend the context menu so that external tools can be run on the current PKG selection.  
-Custom Actions can be modified without having to run PKG Manager. They are stored in the text file "actions.txt", whose exact location you can find by opening the application menu's "About" dialog. The first '|' character delimits name and command.
+Custom Actions can be modified without having to run PKG Manager. They are stored in the text file "actions.txt", whose exact location you can find by opening the application menu's "About" dialog. The first '|' character delimits name and command.  
+For a list of command suggestions, look here: ![Custom Actions](https://github.com/hippie68/ps4-pkg-manager/discussions/2).
 
 ### Tabs
 
@@ -31,6 +34,16 @@ Manage different PKG lists for different purposes.
 ![synchronized_directories](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/9cf092a8-6526-4f86-8e7f-d77b92267e86)
 
 Found by pressing the "Table Settings" button, this feature monitors the listed directories for PKG files and will add them to the table as soon as they're created, modified, or deleted. If a directory's checkbox is selected, the directory will have all its subdirectories monitored as well.
+
+### FTP Files
+
+![ftp_files](https://github.com/hippie68/test/assets/65259318/6d8be478-1159-44fd-aeef-eeccc6f98596)
+
+You can add PKG files that are installed on a PS4: File - Add FTP Files...  
+This requires a bug-fixed PS4 FTP server. If you use an old FTP server that is buggy (still found in some homebrew applications or old hosts), the connection speed will most likely drop to zero quickly. The following servers are supported:
+
+- https://github.com/hippie68/ps4-ftp
+- GoldHEN 2.3 and GoldHEN 2.4 BETA
 
 # How to run
 
