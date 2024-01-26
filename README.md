@@ -2,7 +2,7 @@
 
 ![pkg_manager](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/6c9eca5b-4df9-4286-bfb8-3ee3d3c19c69)
 
-This is an application, primarily made for Linux and macOS, to manage PS4 PKG files by storing their metadata in a database. This means that, once scanned, the PKG collection can be viewed without requiring physical access to the PKG files. The user can select list items and operate on them via a context menu. The context menu can be extended with custom commands ("Custom Actions"), to integrate 3rd party tools that accept command line arguments.
+This is a desktop application, primarily made for Linux and macOS, to manage PS4 PKG files by storing their metadata in a database. This means that, once scanned, the PKG collection can be viewed without requiring physical access to the PKG files. The user can select list items and operate on them via a context menu. The context menu can be extended with custom commands ("Custom Actions"), to integrate 3rd party tools that accept command line arguments.
 
 The application is not finished yet, but it is already in a usable state. Don't let the unfinished state discourage you from trying it out: there is no functionality included to move, change, or delete PKG files. I'm putting it online now as a beta version because as the project is becoming more complex I believe it could greatly profit from bug reports, different opinions/ideas, and from code contributions. Ideally, it becomes a community project with multiple collaborators.
 
