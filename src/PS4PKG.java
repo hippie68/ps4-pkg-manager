@@ -198,7 +198,6 @@ public class PS4PKG implements Serializable {
 
 			// Read entry's filename
 			if (filename_offset > 0) {
-				assert filename_table != null;
 				int strlen = 0;
 				for (int j = filename_offset; filename_table[j] != 0; j++, strlen++)
 					;
@@ -271,7 +270,6 @@ public class PS4PKG implements Serializable {
 					bb.get(entries[i].offset, ba);
 					return ByteBuffer.wrap(ba);
 				} catch (Exception e) {
-					e.printStackTrace();
 					return null;
 				}
 		return null;
@@ -297,7 +295,7 @@ public class PS4PKG implements Serializable {
 
 	public String getSFOValue(String key) {
 		if (this.params == null)
-			return "ERROR";
+			return null;
 		for (var param : params)
 			if (param.name.equals(key))
 				return param.value;

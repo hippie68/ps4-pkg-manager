@@ -6,7 +6,6 @@ import org.eclipse.swt.widgets.Display;
 record QueuedDir(String path, boolean recursive) {
 }
 
-// TODO: Display N/A only if the PKG is not complete yet (compare header's size with real file's size).
 public class TableThread extends Thread {
 	private TabContent tabContent;
 	private PkgQueue<Object> queue;
