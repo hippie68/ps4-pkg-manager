@@ -519,6 +519,7 @@ public class GUI {
 		props.setProperty("share_columns", String.valueOf(Settings.shareColumns));
 		props.setProperty("ps4_ips", String.join(", ", Settings.ps4Ips));
 		props.setProperty("ps4_ftp_ports", String.join(", ", Settings.ps4FtpPorts));
+		props.setProperty("title_language", String.valueOf(Settings.titleLanguage));
 
 		// Save other --------------------------------------------------------------------------------------------------
 
@@ -646,6 +647,12 @@ public class GUI {
 		try {
 			Settings.ps4Ips = props.getProperty("ps4_ips").split(", ");
 			Settings.ps4FtpPorts = props.getProperty("ps4_ftp_ports").split(", ");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		try {
+			Settings.titleLanguage = Integer.valueOf(props.getProperty("title_language"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

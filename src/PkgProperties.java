@@ -1,3 +1,10 @@
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -9,7 +16,10 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
@@ -26,12 +36,16 @@ public class PkgProperties {
 	private Label countLabel;
 	private TabFolder tabFolder;
 	private Table headerTable;
-	private Table fileTable;
+	private Table filesTable;
 	private Table sfoTable;
 	private Text changelogText;
 
 	private void updateTitle(PS4PKG pkg) {
-		shell.setText(pkg.getSFOValue("TITLE") + " - Properties");
+		String title;
+		int titleLanguage = Settings.getTitleLanguage();
+		if (titleLanguage == -1 || (title = pkg.getSFOValue(String.format("TITLE_%02d", titleLanguage))) == null)
+			title = (title = pkg.getSFOValue("TITLE")) == null ? "UNKNOWN TITLE" : title;
+		shell.setText(title + " - Properties");
 	}
 
 	private void createHeaderTableItem(String name, Object value) {
@@ -98,10 +112,10 @@ public class PkgProperties {
 	}
 
 	private void loadFileTable(PS4PKG pkg) {
-		fileTable.removeAll();
+		filesTable.removeAll();
 
 		for (PS4PKGEntry entry : pkg.entries) {
-			TableItem item = new TableItem(fileTable, SWT.NONE);
+			TableItem item = new TableItem(filesTable, SWT.NONE);
 			item.setText(0, String.format("0x%04X", entry.id));
 			item.setText(1, entry.filename != null ? entry.filename : switch (entry.id) {
 				case 0x0001 -> "DIGESTS";
@@ -127,7 +141,7 @@ public class PkgProperties {
 			item.setText(5, String.valueOf(entry.size));
 		}
 
-		for (TableColumn column : fileTable.getColumns())
+		for (TableColumn column : filesTable.getColumns())
 			column.pack();
 	}
 
@@ -210,7 +224,7 @@ public class PkgProperties {
 		// TODO: right-click/double-click and select "show this value for all pkgs".
 		TabItem headerTabItem = new TabItem(tabFolder, SWT.NONE);
 		headerTabItem.setText("PKG Header");
-		this.headerTable = new Table(tabFolder, SWT.NONE);
+		this.headerTable = new Table(tabFolder, SWT.FULL_SELECTION);
 		TableColumn clmnName = new TableColumn(headerTable, SWT.LEFT);
 		clmnName.setText("Header Field");
 		TableColumn clmnValue = new TableColumn(headerTable, SWT.LEFT);
@@ -222,28 +236,79 @@ public class PkgProperties {
 		// Create files tab.
 		TabItem filesTabItem = new TabItem(tabFolder, SWT.NONE);
 		filesTabItem.setText("PKG Files");
-		this.fileTable = new Table(tabFolder, SWT.NONE);
-		TableColumn id = new TableColumn(fileTable, SWT.LEFT);
+		this.filesTable = new Table(tabFolder, SWT.FULL_SELECTION);
+		TableColumn id = new TableColumn(filesTable, SWT.LEFT);
 		id.setText("ID");
-		TableColumn name = new TableColumn(fileTable, SWT.LEFT);
+		TableColumn name = new TableColumn(filesTable, SWT.LEFT);
 		name.setText("Name");
-		TableColumn flags1 = new TableColumn(fileTable, SWT.LEFT);
+		TableColumn flags1 = new TableColumn(filesTable, SWT.LEFT);
 		flags1.setText("Flags 1");
-		TableColumn flags2 = new TableColumn(fileTable, SWT.LEFT);
+		TableColumn flags2 = new TableColumn(filesTable, SWT.LEFT);
 		flags2.setText("Flags 2");
-		TableColumn offset = new TableColumn(fileTable, SWT.RIGHT);
+		TableColumn offset = new TableColumn(filesTable, SWT.RIGHT);
 		offset.setText("Offset");
-		TableColumn size = new TableColumn(fileTable, SWT.RIGHT);
+		TableColumn size = new TableColumn(filesTable, SWT.RIGHT);
 		size.setText("Size");
-		new TableColumn(fileTable, SWT.RIGHT);
-		fileTable.setHeaderVisible(true);
-		fileTable.setLinesVisible(true);
-		filesTabItem.setControl(fileTable);
+		new TableColumn(filesTable, SWT.RIGHT);
+		filesTable.setHeaderVisible(true);
+		filesTable.setLinesVisible(true);
+		filesTabItem.setControl(filesTable);
+
+		// Create files tab file extraction menu.
+		Menu filesMenu = new Menu(filesTable);
+		MenuItem mntmExtract = new MenuItem(filesMenu, SWT.NONE);
+		mntmExtract.setText("Extract File...");
+		mntmExtract.addListener(SWT.Selection, e -> {
+			System.out.println("pkg count: " + pkgs.length);
+			System.out.println("pkg index: " + pkgIndex);
+			PS4PKG pkg = pkgs[pkgIndex];
+			if (Files.notExists(Paths.get(pkg.path))) {
+				new ErrorMessage(shell, "PKG file not found.");
+				return;
+			}
+
+			FileDialog fd = new FileDialog(shell, SWT.SAVE);
+			fd.setText("Select File Name");
+			fd.setFileName(filesTable.getSelection()[0].getText(1));
+			String filename = fd.open();
+			if (filename == null)
+				return;
+			int fileID = Integer.decode(filesTable.getSelection()[0].getText(0));
+
+			try (var pkgFile = new RandomAccessFile(pkg.path, "r"); var channel = pkgFile.getChannel()) {
+				MappedByteBuffer mbb = channel.map(FileChannel.MapMode.READ_ONLY, 0,
+					channel.size() > Integer.MAX_VALUE ? Integer.MAX_VALUE : channel.size());
+				PS4PKGEntry[] entries = pkg.entries;
+				for (int i = 0; i < pkg.header.entry_count; i++)
+					if (entries[i].id == fileID)
+						try {
+							byte[] ba = new byte[entries[i].size];
+							mbb.get(entries[i].offset, ba);
+
+							File outputFile = new File(filename);
+							Files.write(outputFile.toPath(), ba);
+						} catch (Exception exWrite) {
+							exWrite.printStackTrace();
+							new ErrorMessage(shell, String.format("Error while writing to file\n\"%s\"", filename));
+							return;
+						}
+			} catch (Exception exRead) {
+				exRead.printStackTrace();
+				new ErrorMessage(shell, String.format("Error while reading data from PKG file."));
+				return;
+			}
+
+		});
+		filesTable.setMenu(filesMenu);
+		filesTable.addListener(SWT.MenuDetect, e -> {
+			if (filesTable.getItemCount() == 0)
+				e.doit = false;
+		});
 
 		// Create param.sfo tab.
 		TabItem sfoTabItem = new TabItem(tabFolder, SWT.NONE);
 		sfoTabItem.setText("SFO Parameters");
-		this.sfoTable = new Table(tabFolder, SWT.NONE);
+		this.sfoTable = new Table(tabFolder, SWT.FULL_SELECTION);
 		TableColumn key = new TableColumn(sfoTable, SWT.LEFT);
 		key.setText("Key");
 		TableColumn value = new TableColumn(sfoTable, SWT.LEFT);

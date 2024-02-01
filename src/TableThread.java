@@ -19,7 +19,10 @@ public class TableThread extends Thread {
 
 	public String[] Ps4PkgToTableItemText(PS4PKG pkg) {
 		// Get Title.
-		String title = (title = pkg.getSFOValue("TITLE")) == null ? DATA_MISSING : title;
+		String title;
+		int titleLanguage = Settings.getTitleLanguage();
+		if (titleLanguage == -1 || (title = pkg.getSFOValue(String.format("TITLE_%02d", titleLanguage))) == null)
+			title = (title = pkg.getSFOValue("TITLE")) == null ? DATA_MISSING : title;
 
 		// Get Title ID.
 		String titleID = (titleID = pkg.getSFOValue("TITLE_ID")) == null ? DATA_MISSING : titleID;

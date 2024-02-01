@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class Version {
-	public static int currentVersion = 5; // TODO: To be updated automatically by the (private) "make_release" script.
+	public static int currentVersion = 6; // TODO: To be updated automatically by the (private) "make_release" script.
 	private static String currentVersionUrl = "https://github.com/hippie68/ps4-pkg-manager/releases/tag/%23"
 		+ currentVersion;
 	private static String newVersionUrl = "https://github.com/hippie68/ps4-pkg-manager/releases/tag/%23"

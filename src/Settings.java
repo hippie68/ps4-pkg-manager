@@ -35,6 +35,17 @@ public class Settings extends Dialog {
 	public static String[] releaseGroups = {}; // Release group tags entered by the user.
 	public static String[] releases = {}; // Release tags entered by the user.
 
+	private static final String[] titleLanguages = { "[PKG Default Language]", "日本語", "English (United States)",
+		"Français (France)", "Español (España)", "Deutsch", "Italiano", "Nederlands", "Português (Portugal)", "Русский",
+		"한국어", "繁體中文", "简体中文", "Suomi", "Svenska", "Dansk", "Norsk", "Polski", "Português (Brasil)",
+		"English (United Kingdom)", "Türkçe", "Español (América Latina)", "العربية", "Français (Canada)", "Čeština",
+		"Magyar", "Ελληνικά", "Română", "ไทย", "Tiếng Việt", "Indonesia" };
+	public static int titleLanguage = 0;
+
+	public static int getTitleLanguage() {
+		return titleLanguage - 1;
+	}
+
 	/** Copies a table's current column layout into the static variables .columnOrder and .columnWidths. */
 	public static void copySharedColumnLayoutFrom(Table table) {
 		sharedColumnOrder = table.getColumnOrder();
@@ -128,6 +139,23 @@ public class Settings extends Dialog {
 		// // Checkbox "extended PKG types"
 		// Button extendedTypesButton = new Button(checkboxComposite, SWT.CHECK);
 		// extendedTypesButton.setText("[NOT IMPLEMENTED] Display extended PKG types in the \"Type\" column.");
+
+		// Localization
+		Composite localization = new Composite(shell, SWT.NONE);
+		localization.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+		localization.setLayout(new GridLayout(1, false));
+		Group localizationGroup = new Group(localization, SWT.NONE);
+		localizationGroup.setText("Localization");
+		localizationGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		localizationGroup.setLayout(new GridLayout(2, true));
+		Label titleLanguageLabel = new Label(localizationGroup, SWT.LEFT);
+		titleLanguageLabel.setText("Preferred Title Language:");
+		titleLanguageLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+		Combo titleLanguageCombo = new Combo(localizationGroup, SWT.NONE);
+		titleLanguageCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		titleLanguageCombo.setItems(titleLanguages);
+		titleLanguageCombo.select(titleLanguage);
+		titleLanguageCombo.addListener(SWT.Selection, e -> titleLanguage = titleLanguageCombo.getSelectionIndex());
 
 		// Network
 		Composite network = new Composite(shell, SWT.NONE);
@@ -227,7 +255,8 @@ public class Settings extends Dialog {
 			Settings.releaseGroups = splitUserInput(releaseGroupsText.getText());
 			Settings.releases = splitUserInput(releasesText.getText());
 			ReleaseTags.addReleaseTags(Settings.releaseGroups, Settings.releases);
-			// Make all table threads re-evaluate all PKGs to update the tags.
+
+			// Make all table threads re-evaluate all PKGs to update the tags and Title languages.
 			// TODO: only do this if the tags have actually been changed.
 			for (TabContent tabContent : gui.getTabContents()) {
 				ArrayList<TableItemData> tableItemBuffer = tabContent.getTableItemBuffer();
