@@ -38,7 +38,7 @@ External drives that are monitored are automatically detected and scanned for ch
 
 ### FTP Files
 
-![ftp_files](https://github.com/hippie68/test/assets/65259318/6d8be478-1159-44fd-aeef-eeccc6f98596)
+![ftp_files](https://github.com/hippie68/ps4-pkg-manager/assets/65259318/e75c3409-e1a6-4c4b-b17b-d3fee139a928)
 
 You can add PKG files that are installed on a PS4: File - Add FTP Files...  
 This requires a bug-fixed PS4 FTP server. If you use an old FTP server that is buggy (still found in some homebrew applications or old hosts), the connection speed will most likely drop to zero quickly. The following servers are supported:
