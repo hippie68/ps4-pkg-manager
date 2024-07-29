@@ -12,7 +12,6 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -191,9 +190,8 @@ public class WatcherThread extends Thread {
 		try {
 			Files.walkFileTree(Paths.get(dir), new SimpleFileVisitor<Path>() {
 				@Override
-				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-					if (Files.isDirectory(file))
-						dirs.add(file.toAbsolutePath().toString());
+				public FileVisitResult postVisitDirectory(Path file, IOException exc) {
+					dirs.add(file.toAbsolutePath().toString());
 					return FileVisitResult.CONTINUE;
 				}
 

@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -25,6 +26,18 @@ public class CustomActions {
 	private Shell shell;
 	public static CustomAction[] actions;
 	private Composite customActionsGroup;
+
+	// Known pattern variables; the order matters: singular, more specific variables come first.
+	// If variables are added or meanings are changed, isValidPkgSelection() must also be updated.
+	static String[] sfoVariables = new String[] { "%content_id%", "%title_id%" };
+	static String[] singularVariables = new String[] { "%dir%", "%app%", "%patch%", "%dlc%", "%file%" };
+	static String[] pluralVariables = new String[] { "%files%" };
+	static String[] patternVariables;
+
+	static {
+		patternVariables = Arrays.copyOf(singularVariables, singularVariables.length + pluralVariables.length);
+		System.arraycopy(pluralVariables, 0, patternVariables, singularVariables.length, pluralVariables.length);
+	}
 
 	public CustomActions(Shell parent) {
 		this.shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
@@ -122,6 +135,10 @@ public class CustomActions {
 
 	/** Checks if a PKG selection matches a Custom Action's variable requirements. */
 	public static boolean isValidPkgSelection(CustomAction action, PS4PKG[] pkgs) {
+		// Allow SFO variables only for a single PKG selection.
+		if (pkgs.length > 1 && Arrays.stream(sfoVariables).anyMatch(action.commandPattern::contains))
+			return false;
+
 		int requiredApps = countSubstrings(action.commandPattern, "%app%");
 		int requiredPatches = countSubstrings(action.commandPattern, "%patch%");
 		int requiredDlcs = countSubstrings(action.commandPattern, "%dlc%");

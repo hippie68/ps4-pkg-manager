@@ -1,3 +1,5 @@
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -293,7 +295,12 @@ public class TabContent extends Composite {
 
 		new MenuItem(contextMenu, SWT.SEPARATOR);
 
-		MenuItem mntmSelectAll = new MenuItem(contextMenu, SWT.NONE);
+		MenuItem mntmSelect = new MenuItem(contextMenu, SWT.CASCADE);
+		mntmSelect.setText("Select");
+		Menu menuSelect = new Menu(this.getShell(), SWT.DROP_DOWN);
+		mntmSelect.setMenu(menuSelect);
+
+		MenuItem mntmSelectAll = new MenuItem(menuSelect, SWT.NONE);
 		mntmSelectAll.setText("Select All");
 		mntmSelectAll.addListener(SWT.Selection, e -> {
 			for (TableItem item : table.getItems())
@@ -301,7 +308,14 @@ public class TabContent extends Composite {
 			gui.updateCurrentSelectionStatus(table.getSelection());
 		});
 
-		MenuItem mntmInvertSelection = new MenuItem(contextMenu, SWT.NONE);
+		MenuItem mntmDeselectAll = new MenuItem(menuSelect, SWT.NONE);
+		mntmDeselectAll.setText("Deselect All");
+		mntmDeselectAll.addListener(SWT.Selection, e -> {
+			table.deselectAll();
+			gui.updateCurrentSelectionStatus(table.getSelection());
+		});
+
+		MenuItem mntmInvertSelection = new MenuItem(menuSelect, SWT.NONE);
 		mntmInvertSelection.setText("Invert Selection");
 		mntmInvertSelection.addListener(SWT.Selection, e -> {
 			for (TableItem item : table.getItems()) {
@@ -310,6 +324,78 @@ public class TabContent extends Composite {
 					table.deselect(index);
 				else
 					table.select(index);
+			}
+			gui.updateCurrentSelectionStatus(table.getSelection());
+		});
+
+		new MenuItem(menuSelect, SWT.SEPARATOR);
+
+		MenuItem mntmSelectExisting = new MenuItem(menuSelect, SWT.NONE);
+		mntmSelectExisting.setText("Select Existing");
+		mntmSelectExisting.addListener(SWT.Selection, e -> {
+			table.deselectAll();
+			for (TableItem item : table.getItems())
+				if (Files.exists(Paths.get(((PS4PKG) item.getData()).path)))
+					table.select(table.indexOf(item));
+			table.setTopIndex(table.getSelectionIndex());
+			gui.updateCurrentSelectionStatus(table.getSelection());
+		});
+
+		MenuItem mntmSelectNonExisting = new MenuItem(menuSelect, SWT.NONE);
+		mntmSelectNonExisting.setText("Select Non-Existing");
+		mntmSelectNonExisting.addListener(SWT.Selection, e -> {
+			table.deselectAll();
+			for (TableItem item : table.getItems())
+				if (!Files.exists(Paths.get(((PS4PKG) item.getData()).path)))
+					table.select(table.indexOf(item));
+			table.setTopIndex(table.getSelectionIndex());
+			gui.updateCurrentSelectionStatus(table.getSelection());
+		});
+
+		MenuItem mntmSelectSynchronized = new MenuItem(menuSelect, SWT.NONE);
+		mntmSelectSynchronized.setText("Select Synchronized");
+		mntmSelectSynchronized.addListener(SWT.Selection, e -> {
+			TabContent tabContent = gui.getCurrentTabContent();
+			TableItem[] items = table.getItems();
+			String[] synchedDirs = tabContent.watcherThread.getSynchedDirs();
+			table.deselectAll();
+			if (synchedDirs.length != 0) {
+				int[] synchedDirsRecursionState = tabContent.watcherThread.getSynchedDirsRecursionState();
+				for (TableItem item : items) {
+					PS4PKG pkg = (PS4PKG) item.getData();
+					for (int i = 0; i < synchedDirs.length; i++)
+						if (synchedDirsRecursionState[i] == 0) {
+							if (pkg.directory.equals(synchedDirs[i]))
+								table.select(table.indexOf(item));
+						} else if (pkg.directory.startsWith(synchedDirs[i]))
+							table.select(table.indexOf(item));
+				}
+				table.setTopIndex(table.getSelectionIndex());
+			}
+			gui.updateCurrentSelectionStatus(table.getSelection());
+		});
+
+		MenuItem mntmSelectNonSynchronized = new MenuItem(menuSelect, SWT.NONE);
+		mntmSelectNonSynchronized.setText("Select Non-Synchronized");
+		mntmSelectNonSynchronized.addListener(SWT.Selection, e -> {
+			TabContent tabContent = gui.getCurrentTabContent();
+			TableItem[] items = table.getItems();
+			String[] synchedDirs = tabContent.watcherThread.getSynchedDirs();
+			if (synchedDirs.length == 0)
+				table.selectAll();
+			else {
+				table.deselectAll();
+				int[] synchedDirsRecursionState = tabContent.watcherThread.getSynchedDirsRecursionState();
+				for (TableItem item : items) {
+					PS4PKG pkg = (PS4PKG) item.getData();
+					for (int i = 0; i < synchedDirs.length; i++)
+						if (synchedDirsRecursionState[i] == 0) {
+							if (!pkg.directory.equals(synchedDirs[i]))
+								table.select(table.indexOf(item));
+						} else if (!pkg.directory.startsWith(synchedDirs[i]))
+							table.select(table.indexOf(item));
+				}
+				table.setTopIndex(table.getSelectionIndex());
 			}
 			gui.updateCurrentSelectionStatus(table.getSelection());
 		});

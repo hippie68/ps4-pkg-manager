@@ -259,8 +259,6 @@ public class PkgProperties {
 		MenuItem mntmExtract = new MenuItem(filesMenu, SWT.NONE);
 		mntmExtract.setText("Extract File...");
 		mntmExtract.addListener(SWT.Selection, e -> {
-			System.out.println("pkg count: " + pkgs.length);
-			System.out.println("pkg index: " + pkgIndex);
 			PS4PKG pkg = pkgs[pkgIndex];
 			if (Files.notExists(Paths.get(pkg.path))) {
 				new ErrorMessage(shell, "PKG file not found.");

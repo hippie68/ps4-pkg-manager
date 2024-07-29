@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Display;
@@ -11,11 +12,6 @@ public class CustomAction {
 	String name;
 	String commandPattern;
 
-	// Known pattern variables; the order matters: singular, more specific variables come first.
-	// If variables are added or meanings are changed, CustomActions::isValidPkgSelection() must also be updated.
-	private static String[] patternVariables = new String[] { "%dir%", "%app%", "%patch%", "%dlc%", "%file%",
-		"%files%" };
-
 	public CustomAction(String name, String commandPattern) {
 		this.name = name;
 		this.commandPattern = commandPattern;
@@ -23,10 +19,14 @@ public class CustomAction {
 
 	// Used by the GUI to reject saving command patterns that are invalid.
 	public static boolean patternIsValid(String pattern) {
-		if ((pattern.contains("%file%") || pattern.contains("%app%") || pattern.contains("%patch%")
-			|| pattern.contains("%dlc%"))
-			&& (pattern.contains("%files%") || pattern.contains("%apps%") || pattern.contains("%patches%")
-				|| pattern.contains("%dlcs%")))
+		boolean containsSfoVariables = Arrays.stream(CustomActions.sfoVariables).anyMatch(pattern::contains);
+		boolean containsSingularVariables = Arrays.stream(CustomActions.singularVariables).anyMatch(pattern::contains);
+		boolean containsPluralVariables = Arrays.stream(CustomActions.pluralVariables).anyMatch(pattern::contains);
+
+		if (containsSingularVariables && containsPluralVariables)
+			return false;
+
+		if (containsSfoVariables && (containsSingularVariables || containsPluralVariables))
 			return false;
 
 		return true;
@@ -66,6 +66,8 @@ public class CustomAction {
 			return null;
 
 		switch (patternVariable) {
+			case "%content_id%":
+			case "%title_id%":
 			case "%dir%":
 				return pkgs.get(0);
 			case "%app%":
@@ -134,34 +136,57 @@ public class CustomAction {
 					tokens.add(commandPattern.substring(start2, i));
 			}
 
-		// Replace all PKG variables inside all tokens.
-		for (int i = 0; i < tokens.size(); i++) {
-			String token;
-			boolean filesVariableSuccessfullyUsed = false;
-			for (String variable : patternVariables)
-				while ((token = tokens.get(i)).contains(variable)) {
-					PS4PKG pkg = getNextPkg(variable, pkgList);
-					if (pkg == null) {
-						// Allow plural variables to exhaust the list, if they have been used successfully once.
-						if (variable.equals("%files%") && filesVariableSuccessfullyUsed) {
-							tokens.remove(i--);
-							continue;
+		if (Arrays.stream(CustomActions.sfoVariables).anyMatch(commandPattern::contains)) {
+			// Replace all SFO variables inside all tokens.
+			PS4PKG pkg = pkgList.get(0); // Patterns that have SFO variables only allow a single PKG.
+			for (int i = 0; i < tokens.size(); i++) {
+				String token;
+
+				for (String variable : CustomActions.sfoVariables)
+					while ((token = tokens.get(i)).contains(variable)) {
+						String value = switch (variable) {
+							case "%content_id%" -> pkg.getSFOValue("CONTENT_ID");
+							case "%title_id%" -> pkg.getSFOValue("TITLE_ID");
+							default -> null;
+						};
+						if (value == null)
+							return null;
+
+						tokens.set(i, token.replace(variable, value));
+					}
+			}
+		} else {
+			// Replace all PKG variables inside all tokens.
+			for (int i = 0; i < tokens.size(); i++) {
+				String token;
+				boolean filesVariableSuccessfullyUsed = false;
+
+				for (String variable : CustomActions.patternVariables)
+					while ((token = tokens.get(i)).contains(variable)) {
+						PS4PKG pkg = getNextPkg(variable, pkgList);
+						if (pkg == null) {
+							// Allow plural variables to exhaust the list, if they have been used successfully once.
+							if (variable.equals("%files%") && filesVariableSuccessfullyUsed) {
+								tokens.remove(i--);
+								continue;
+							}
+
+							return null; // Otherwise, or for singular variables, not having a matching PKG is an
+										 // error.
 						}
 
-						return null; // Otherwise, or for singular variables, not having a matching PKG is an error.
+						if (variable.equals("%dir%"))
+							tokens.set(i, token.replace(variable, pkg.directory));
+						else if (variable.equals("%files%")) {
+							filesVariableSuccessfullyUsed = true;
+							tokens.set(i, "%files%");
+							tokens.add(i, token.replace(variable, pkg.path));
+							i++;
+						} else
+							tokens.set(i, token.replace(variable, pkg.path));
+						pkgList.remove(pkg);
 					}
-
-					if (variable.equals("%dir%"))
-						tokens.set(i, token.replace(variable, pkg.directory));
-					else if (variable.equals("%files%")) {
-						filesVariableSuccessfullyUsed = true;
-						tokens.set(i, "%files%");
-						tokens.add(i, token.replace(variable, pkg.path));
-						i++;
-					} else
-						tokens.set(i, token.replace(variable, pkg.path));
-					pkgList.remove(pkg);
-				}
+			}
 		}
 
 		return tokens.toArray(String[]::new);

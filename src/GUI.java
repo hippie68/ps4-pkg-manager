@@ -44,8 +44,8 @@ public class GUI {
 	private Display display;
 	private Shell shell;
 	private TabFolder tabFolder;
-	private static String DEFAULT_TAB_NAME = "Default Tab";
-	private static String NEW_TAB_NAME = "New Tab";
+	private static final String DEFAULT_TAB_NAME = "Default Tab";
+	private static final String NEW_TAB_NAME = "New Tab";
 	private Label currentSelectionStatus;
 	private Label progressIndicator;
 	public Table previousTable;
