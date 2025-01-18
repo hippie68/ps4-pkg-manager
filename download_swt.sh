@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output_dir=swt
+swt_dir=swt
 eclipse_download_prefix='https://download.eclipse.org/eclipse/downloads/'
 eclipse_archive_prefix='https://archive.eclipse.org/eclipse/downloads/'
 file_request_prefix='https://www.eclipse.org/downloads/download.php?file='
@@ -98,7 +98,7 @@ eclipse_dir=$(get_eclipse_dir "$swt_version")
 readarray -t urls < <(get_swt_downloads "$eclipse_dir")
 
 # Download SWT files for known/supported operating systems.
-mkdir -p "$output_dir" && cd "$output_dir" || exit 1
+mkdir -p "$swt_dir" && cd "$swt_dir" || exit 1
 for url in "${urls[@]}"; do
     case $url in
         *win32-x86*) os_dir=windows ;;
@@ -113,9 +113,9 @@ for url in "${urls[@]}"; do
     esac
     [[ $platform != all && $platform != "$os_dir" ]] && continue;
 
-    output_filename="$output_dir/$swt_version/$os_dir/swt.jar"
-    if [[ -f "../$output_filename" ]]; then
-        confirm "File \"$output_filename\" already exists. Download anyway?" \
+    output_dir="$swt_dir/$swt_version/$os_dir"
+    if [[ -f "../$output_dir/swt.jar" && -f "../$output_dir/src.zip" ]]; then
+        confirm "Required files in \"$output_dir\" already exist. Download anyway?" \
             || continue
     fi
 
@@ -127,10 +127,10 @@ for url in "${urls[@]}"; do
         continue
     fi
 
-    # Extract and unsign swt.jar from downloaded archive.
-    echo "Extracting to \"$output_filename\"..."
-    jar --extract --file="$temp_filename" swt.jar || exit 1
-    echo "Unsigning \"$output_filename\"..."
+    # Extract src.zip and swt.jar from downloaded archive and unsign swt.jar.
+    echo "Extracting to \"$output_dir\"..."
+    jar --extract --file="$temp_filename" src.zip swt.jar || exit 1
+    echo "Unsigning \"$output_dir/swt.jar\"..."
     if [[ $unsigner == 7z ]]; then
         7z d -tzip swt.jar "${signature_files[@]}" > /dev/null || exit 1
     else
