@@ -59,8 +59,12 @@ If you want to be able to start the .jar file with a mouse click, make sure to d
 
 Feature requests and bug reports: https://github.com/hippie68/ps4-pkg-manager/issues
 
-I would like to make this project a community project where everyone can participate in. You want to write a useful Java class? Let me know and I will add you to the list of collaborators. You should be able to set up the project in your favorite Java IDE by adding the only dependency SWT (https://www.eclipse.org/swt/) as an external library. To make this easier, I have created the script `download_swt.sh` which automatically downloads, extracts, and unsigns swt.jar files for all supported platforms.  
-To compile the project into a .jar file, have a look at the file `build.sh`. If it is necessary, we could try to change it from Bash to sh. 
+I would like to make this project a community project where everyone can participate in. You want to write a useful Java class? Let me know and I will add you to the list of collaborators.
+
+You should be able to set up the project in your favorite Java IDE by adding the only dependency SWT (https://www.eclipse.org/swt/) as an external library. To make this easier, I have created the script `download_swt.sh` which automatically downloads, extracts, and unsigns required files for all supported platforms.  
+For example, to add SWT to an IntelliJ IDEA project after running the script with the command-line argument `linux`, go to "File - Project Structure - Project Settings - Libraries - "+" - Java" and select the newly created `linux` subdirectory. This will make available both SWT and its Javadocs.
+
+To compile the project into a .jar file, have a look at the file `build.sh`. If it is necessary, we could try to change it from Bash to sh.
 
 The project is in dire need of supporters that use macOS. I don't have a Mac, so I don't know if the program in its current state works well and looks good on macOS. If you want to provide feedback or to become a maintainer, that would be much appreciated!
 
