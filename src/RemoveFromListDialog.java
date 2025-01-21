@@ -64,7 +64,7 @@ public class RemoveFromListDialog {
         if (shell == null) // TODO: not sure anymore why this is here.
             return true;
 
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         shell.open();
 
         Display display = shell.getParent().getDisplay();

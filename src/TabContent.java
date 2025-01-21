@@ -10,7 +10,6 @@ import org.eclipse.swt.dnd.DropTarget;
 import org.eclipse.swt.dnd.DropTargetAdapter;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.FileTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -36,15 +35,15 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 public class TabContent extends Composite {
-	private GUI gui;
+	private final GUI gui;
 	private String name;
 	private Composite searchBar;
 	private String filter = null;
-	private Table table;
+	private final Table table;
 	public PkgQueue<Object> queue;
 	public TableThread tableThread;
 	public WatcherThread watcherThread;
-	private ArrayList<TableItemData> tableItemBuffer; // Full, always-sorted list of table's PKGs and TableItem texts.
+	private final ArrayList<TableItemData> tableItemBuffer; // Full, always-sorted list of table's PKGs and TableItem texts.
 	public long stamp = Long.MIN_VALUE; // Keeps track of the order in which PKGs are added in the current session.
 
 	public TabContent(Composite parent, GUI gui, String name) {
@@ -95,12 +94,10 @@ public class TabContent extends Composite {
 	public boolean tableItemTextsMatchFilter(String[] texts) {
 		if (this.filter == null)
 			return true;
-		if (texts[Column.FILENAME.ordinal()].toLowerCase().contains(filter)
-			|| texts[Column.TITLE.ordinal()].toLowerCase().contains(filter)
-			|| texts[Column.TITLE_ID.ordinal()].toLowerCase().contains(filter))
-			return true;
-		return false;
-	}
+        return texts[Column.FILENAME.ordinal()].toLowerCase().contains(filter)
+                || texts[Column.TITLE.ordinal()].toLowerCase().contains(filter)
+                || texts[Column.TITLE_ID.ordinal()].toLowerCase().contains(filter);
+    }
 
 	private void insertTableItem(int index, TableItemData data) {
 		if (tableItemTextsMatchFilter(data.texts())) {
@@ -357,10 +354,10 @@ public class TabContent extends Composite {
 		mntmSelectSynchronized.addListener(SWT.Selection, e -> {
 			TabContent tabContent = gui.getCurrentTabContent();
 			TableItem[] items = table.getItems();
-			String[] synchedDirs = tabContent.watcherThread.getSynchedDirs();
+			String[] synchedDirs = tabContent.watcherThread.getSyncedDirs();
 			table.deselectAll();
 			if (synchedDirs.length != 0) {
-				int[] synchedDirsRecursionState = tabContent.watcherThread.getSynchedDirsRecursionState();
+				int[] synchedDirsRecursionState = tabContent.watcherThread.getSyncedDirsRecursionState();
 				for (TableItem item : items) {
 					PS4PKG pkg = (PS4PKG) item.getData();
 					for (int i = 0; i < synchedDirs.length; i++)
@@ -380,12 +377,12 @@ public class TabContent extends Composite {
 		mntmSelectNonSynchronized.addListener(SWT.Selection, e -> {
 			TabContent tabContent = gui.getCurrentTabContent();
 			TableItem[] items = table.getItems();
-			String[] synchedDirs = tabContent.watcherThread.getSynchedDirs();
+			String[] synchedDirs = tabContent.watcherThread.getSyncedDirs();
 			if (synchedDirs.length == 0)
 				table.selectAll();
 			else {
 				table.deselectAll();
-				int[] synchedDirsRecursionState = tabContent.watcherThread.getSynchedDirsRecursionState();
+				int[] synchedDirsRecursionState = tabContent.watcherThread.getSyncedDirsRecursionState();
 				for (TableItem item : items) {
 					PS4PKG pkg = (PS4PKG) item.getData();
 					for (int i = 0; i < synchedDirs.length; i++)
@@ -409,8 +406,7 @@ public class TabContent extends Composite {
 		menuCopyTo.addListener(SWT.Show, e -> {
 			// Dispose old menu items.
 			MenuItem[] oldMenuItems = menuCopyTo.getItems();
-			for (int i = 0; i < oldMenuItems.length; i++)
-				oldMenuItems[i].dispose();
+            for (MenuItem oldMenuItem : oldMenuItems) oldMenuItem.dispose();
 
 			// Create new menu items.
 			for (TabContent tabContent : gui.getTabContents()) {
@@ -431,8 +427,7 @@ public class TabContent extends Composite {
 		menuMoveTo.addListener(SWT.Show, e -> {
 			// Dispose old menu items.
 			MenuItem[] oldMenuItems = menuMoveTo.getItems();
-			for (int i = 0; i < oldMenuItems.length; i++)
-				oldMenuItems[i].dispose();
+            for (MenuItem oldMenuItem : oldMenuItems) oldMenuItem.dispose();
 
 			// Create new menu items.
 			for (TabContent tabContent : gui.getTabContents()) {
@@ -460,7 +455,7 @@ public class TabContent extends Composite {
 			gui.updateCurrentSelectionStatus(null);
 		});
 
-		TableItem items[] = table.getSelection();
+		TableItem[] items = table.getSelection();
 		for (TableItem item : table.getSelection()) {
 			if (((PS4PKG) item.getData()).path.startsWith("ftp://")) {
 				new MenuItem(contextMenu, SWT.SEPARATOR);
@@ -482,10 +477,7 @@ public class TabContent extends Composite {
 			for (int i = 0; i < actions.length; i++) {
 				MenuItem menuItem = new MenuItem(contextMenu, SWT.NONE);
 				menuItem.setText(actions[i].name);
-				if (!CustomActions.isValidPkgSelection(actions[i], pkgs))
-					menuItem.setEnabled(false);
-				else
-					menuItem.setEnabled(true);
+                menuItem.setEnabled(CustomActions.isValidPkgSelection(actions[i], pkgs));
 
 				int final_i = i;
 				menuItem.addListener(SWT.Selection, e -> actions[final_i].run(this, pkgs));
@@ -508,6 +500,9 @@ public class TabContent extends Composite {
 
 	/** The only safe way to remove a table item, because this removes the item from the buffer, too. */
 	public void removeTableItem(TableItem item) {
+		if (item.isDisposed())
+			return;
+
 		for (TableItemData data : tableItemBuffer)
 			if (data.pkg() == item.getData()) {
 				tableItemBuffer.remove(data);
@@ -518,8 +513,7 @@ public class TabContent extends Composite {
 
 	/** Calls removeTableItem() on each array element. */
 	public void removeTableItems(TableItem[] items) {
-		for (int i = 0; i < items.length; i++)
-			removeTableItem(items[i]);
+        for (TableItem item : items) removeTableItem(item);
 	}
 
 	private Table createTable(Composite parent) {
@@ -563,7 +557,7 @@ public class TabContent extends Composite {
 
 		// Add drag and drop functionality.
 		DropTarget dropTarget = new DropTarget(table, DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_DEFAULT);
-		dropTarget.setTransfer(new Transfer[] { FileTransfer.getInstance() });
+		dropTarget.setTransfer(FileTransfer.getInstance());
 		dropTarget.addDropListener(new DropTargetAdapter() {
 			@Override
 			public void drop(DropTargetEvent event) {
@@ -595,11 +589,7 @@ public class TabContent extends Composite {
 						MenuItem item = new MenuItem(tableHeaderMenu, SWT.CHECK);
 						TableColumn column = table.getColumn(i);
 						item.setText(column.getText());
-
-						if (column.getWidth() == 0)
-							item.setSelection(false);
-						else
-							item.setSelection(true);
+                        item.setSelection(column.getWidth() != 0);
 
 						item.addListener(SWT.Selection, event -> {
 							if (item.getSelection() == false)
@@ -747,13 +737,12 @@ public class TabContent extends Composite {
 		t.setText(Column.SIZE.ordinal(), "888.88 GB");
 		t.setText(Column.RELEASE_TAGS.ordinal(), "OPOISSO893");
 		table.setSortDirection(SWT.UP);
-		for (int i = 0; i < columns.length; i++) {
-			TableColumn column = columns[i];
-			table.setSortColumn(column);
-			column.pack();
-			column.setWidth(column.getWidth() + 2);
-			column.setData(column.getWidth());
-		}
+        for (TableColumn column : columns) {
+            table.setSortColumn(column);
+            column.pack();
+            column.setWidth(column.getWidth() + 2);
+            column.setData(column.getWidth());
+        }
 		t.dispose();
 		table.setSortDirection(SWT.NONE);
 		table.setSortColumn(table.getColumn(Column.INDEX.ordinal()));

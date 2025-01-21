@@ -67,7 +67,7 @@ public class RenameTabDialog extends Dialog {
 
         shell.setDefaultButton(ok);
         shell.pack();
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         shell.open();
 
         Display display = getParent().getDisplay();

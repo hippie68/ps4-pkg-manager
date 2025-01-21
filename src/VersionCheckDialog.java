@@ -31,13 +31,13 @@ public class VersionCheckDialog {
 
         shell.setDefaultButton(closeButton);
         shell.pack();
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         shell.open();
 
         while (Display.getCurrent().readAndDispatch())
             ;
 
-        if (updateAlreadyFound == true)
+        if (updateAlreadyFound)
             messageLabel.setText(Version.convertReturnValueToString(0));
         else
             messageLabel.setText(Version.convertReturnValueToString(Version.checkForUpdates()));

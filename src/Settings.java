@@ -276,7 +276,7 @@ public class Settings extends Dialog {
 		releaseGroupsText.setText(String.join(", ", Settings.releaseGroups));
 		releasesText.setText(String.join(", ", Settings.releases));
 
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 

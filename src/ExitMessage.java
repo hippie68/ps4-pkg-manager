@@ -21,7 +21,7 @@ public class ExitMessage {
         label.setText(message);
 
         shell.pack();
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         parent.setVisible(false);
         shell.open();
 

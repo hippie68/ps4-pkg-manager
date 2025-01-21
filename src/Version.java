@@ -5,21 +5,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class Version {
-	public static int currentVersion = 7; // TODO: To be updated automatically by the (private) "make_release" script.
-	private static String currentVersionUrl = "https://github.com/hippie68/ps4-pkg-manager/releases/tag/%23"
+	public static final int currentVersion = 8; // TODO: To be updated automatically by the (private) "make_release" script.
+	private static final String currentVersionUrl = "https://github.com/hippie68/ps4-pkg-manager/releases/tag/%23"
 		+ currentVersion;
-	private static String newVersionUrl = "https://github.com/hippie68/ps4-pkg-manager/releases/tag/%23"
+	private static final String newVersionUrl = "https://github.com/hippie68/ps4-pkg-manager/releases/tag/%23"
 		+ (currentVersion + 1);
-	public static String releasesUrl = "https://github.com/hippie68/ps4-pkg-manager/releases";
+	public static final String releasesUrl = "https://github.com/hippie68/ps4-pkg-manager/releases";
 
 	// Return values: 0: update found, 1: no update found, 2: unknown error, -1: GitHub broke the update check.
 	public static int checkForUpdates() {
-		try (Scanner scanner = new Scanner(new URL(newVersionUrl).openStream(), StandardCharsets.UTF_8.toString())) {
+		try (Scanner ignored = new Scanner(new URL(newVersionUrl).openStream(), StandardCharsets.UTF_8)) {
 			return 0;
 		} catch (FileNotFoundException e) {
 			// Check if the update mechanism is broken by testing the current release.
-			try (Scanner scanner = new Scanner(new URL(currentVersionUrl).openStream(),
-				StandardCharsets.UTF_8.toString())) {
+			try (Scanner ignored = new Scanner(new URL(currentVersionUrl).openStream(), StandardCharsets.UTF_8)) {
 				return 1; // Still works, no new update available.
 			} catch (IOException e2) {
 				return -1; // Broken.

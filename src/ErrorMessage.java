@@ -21,7 +21,7 @@ public class ErrorMessage {
         ok.setText("OK");
         ok.addListener(SWT.Selection, e -> shell.close());
         shell.pack();
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         shell.open();
     }
 }

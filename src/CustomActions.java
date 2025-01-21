@@ -23,9 +23,9 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class CustomActions {
-	private Shell shell;
+	private final Shell shell;
 	public static CustomAction[] actions;
-	private Composite customActionsGroup;
+	private final Composite customActionsGroup;
 
 	// Known pattern variables; the order matters: singular, more specific variables come first.
 	// If variables are added or meanings are changed, isValidPkgSelection() must also be updated.
@@ -118,14 +118,14 @@ public class CustomActions {
 
 		shell.setDefaultButton(close);
 		shell.pack();
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 
 	// Helper function for isValidPkgSelection().
 	private static int countSubstrings(String string, String substring) {
 		int count = 0;
-		int next = 0;
+		int next;
 		while ((next = string.indexOf(substring)) != -1) {
 			count++;
 			string = string.substring(next + substring.length());
@@ -227,7 +227,7 @@ public class CustomActions {
 				String line = reader.readLine().trim();
 				int barIndex = line.indexOf('|');
 				String name = line.substring(0, barIndex).trim();
-				String command = line.substring(barIndex + 1, line.length()).trim();
+				String command = line.substring(barIndex + 1).trim();
 
 				actions.add(new CustomAction(name, command));
 			}
@@ -236,7 +236,7 @@ public class CustomActions {
 		} catch (NullPointerException e) {
 		}
 
-		if (actions.size() != 0)
+		if (!actions.isEmpty())
 			CustomActions.actions = actions.toArray(new CustomAction[0]);
 	}
 

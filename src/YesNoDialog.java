@@ -1,9 +1,5 @@
-
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -17,47 +13,22 @@ public class YesNoDialog {
         this.shell = new Shell(Display.getCurrent().getActiveShell(), SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
         shell.setText(title);
         shell.setLayout(new GridLayout(1, false));
+        ShellHelpers.setShellMargin(shell);
 
-        Composite composite = new Composite(shell, SWT.NONE);
-        composite.setLayout(new GridLayout(1, false));
+        new Label(shell, SWT.NONE).setText(question);
 
-        Label label = new Label(composite, SWT.NONE);
-        label.setText(question);
+        ShellHelpers.createDialogButtons(shell, SWT.RIGHT,
+            new DialogButton("No", e -> { result = false; shell.close(); }),
+            new DialogButton("Yes", e -> { result = true; shell.close(); }));
 
-        Composite buttons = new Composite(shell, SWT.NONE);
-        buttons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-        buttons.setLayout(new GridLayout(2, true));
-
-        Button no = new Button(buttons, SWT.PUSH);
-        no.setText("No");
-        no.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        no.addListener(SWT.Selection, e -> {
-            result = false;
-            shell.close();
-        });
-
-        Button yes = new Button(buttons, SWT.PUSH);
-        yes.setText("Yes");
-        yes.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-        yes.addListener(SWT.Selection, e -> {
-            this.result = true;
-            shell.close();
-        });
-
-        shell.setDefaultButton(yes);
         shell.pack();
     }
 
     /** Displays the dialog and returns true if the user selected "Yes", otherwise false. */
     public boolean open() {
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         shell.open();
-
-        Display display = shell.getParent().getDisplay();
-        while (!shell.isDisposed())
-            if (!display.readAndDispatch())
-                display.sleep();
-
+        ShellHelpers.runEventLoop(shell);
         return result;
     }
 }

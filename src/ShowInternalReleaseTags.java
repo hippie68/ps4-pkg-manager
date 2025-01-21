@@ -65,7 +65,7 @@ public class ShowInternalReleaseTags {
         link.addListener(SWT.Selection, event -> Program.launch(url));
 
         shell.pack();
-        GUI.centerShell(shell);
+        ShellHelpers.centerShell(shell);
         shell.open();
     }
 

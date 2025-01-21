@@ -29,16 +29,16 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 public class PkgProperties {
-	private Shell shell;
-	private PS4PKG[] pkgs;
+	private final Shell shell;
+	private final PS4PKG[] pkgs;
 	private int pkgIndex;
-	private Label pathLabel;
-	private Label countLabel;
-	private TabFolder tabFolder;
-	private Table headerTable;
-	private Table filesTable;
-	private Table sfoTable;
-	private Text changelogText;
+	private final Label pathLabel;
+	private final Label countLabel;
+	private final TabFolder tabFolder;
+	private final Table headerTable;
+	private final Table filesTable;
+	private final Table sfoTable;
+	private final Text changelogText;
 
 	private void updateTitle(PS4PKG pkg) {
 		String title;
@@ -292,7 +292,7 @@ public class PkgProperties {
 						}
 			} catch (Exception exRead) {
 				exRead.printStackTrace();
-				new ErrorMessage(shell, String.format("Error while reading data from PKG file."));
+				new ErrorMessage(shell, "Error while reading data from PKG file.");
 				return;
 			}
 
@@ -328,7 +328,7 @@ public class PkgProperties {
 		Point headerTableSize = headerTable.getSize();
 		shell.setSize(headerTableSize.x, headerTableSize.y);
 
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 }

@@ -6,7 +6,8 @@ import org.eclipse.swt.SWT;
 public enum Column {
     // To maintain backward compatibility, this order must never be changed. New columns must be added at the end.
     // Once a new program version is released, new columns must never be removed. If a column ever becomes obsolete, it
-    // must be replaced with a placeholder containing obsolescence information.
+    // must be replaced with a placeholder containing obsolescence information. In such a case, the static variable
+    // "length" must be calculated differently not to include obsolete columns.
     INDEX("Index", "Represents the ascending order in which PKGs were added in the current session", false, SWT.LEFT,
         Comparators.longComparator),
     PATH("Path", Platform.DIRECTORY_TERM + " and file name combined", false, SWT.LEFT, Comparators.stringComparator),
@@ -25,19 +26,22 @@ public enum Column {
         Comparators.stringComparator),
     COMPATIBILITY_CHECKSUM("Compatibility checksum",
         "Indicates whether app and patch PKGs are compatible with each other (\"married\")", true, SWT.LEFT,
-        Comparators.stringComparator);
+        Comparators.stringComparator),
+    FAKE("FPKG", "A check mark means the PKG is a fake PKG", false, SWT.CENTER, Comparators.boolComparator);
 
     public final String name;
     public final String tooltip;
-    public boolean enabledByDefault;
+    public final boolean enabledByDefault;
     public final int style;
     public final Comparator<String> comparator;
     public static final int length = values().length;
 
     // The order in which the current program version displays columns by default. May be changed arbitrarily.
     public static final int[] order = { INDEX.ordinal(), PATH.ordinal(), DIRECTORY.ordinal(), FILENAME.ordinal(),
-        TITLE.ordinal(), TITLE_ID.ordinal(), REGION.ordinal(), TYPE.ordinal(), VERSION.ordinal(), BACKPORT.ordinal(),
-        SDK.ordinal(), FIRMWARE.ordinal(), SIZE.ordinal(), RELEASE_TAGS.ordinal(), COMPATIBILITY_CHECKSUM.ordinal() };
+        TITLE.ordinal(), TITLE_ID.ordinal(), REGION.ordinal(), TYPE.ordinal(), VERSION.ordinal(), FAKE.ordinal(),
+        BACKPORT.ordinal(), SDK.ordinal(), FIRMWARE.ordinal(), SIZE.ordinal(), RELEASE_TAGS.ordinal(),
+        COMPATIBILITY_CHECKSUM.ordinal()
+    };
 
     Column(String name, String tooltip, boolean enabledByDefault, int style, Comparator<String> comparator) {
         this.name = name;
@@ -57,22 +61,21 @@ public enum Column {
 }
 
 class Comparators {
-    static final Comparator<String> longComparator = (a, b) -> Long.signum(Long.valueOf(a) - Long.valueOf(b));
+    static final Comparator<String> longComparator = (a, b) -> Long.signum(Long.parseLong(a) - Long.parseLong(b));
 
-    static final Comparator<String> stringComparator = (a, b) -> a.compareToIgnoreCase(b);
+    static final Comparator<String> stringComparator = String::compareToIgnoreCase;
 
-    static final Comparator<String> boolComparator = (a, b) -> a.length() == b.length() ? 0
-        : a.length() > b.length() ? -1 : 1;
+    static final Comparator<String> boolComparator = (a, b) -> Integer.compare(b.length(), a.length());
 
     static final Comparator<String> numberComparator = (a, b) -> {
         double fa, fb;
         try {
-            fa = Double.valueOf(a);
+            fa = Double.parseDouble(a);
         } catch (NumberFormatException e) {
             fa = Double.MAX_VALUE;
         }
         try {
-            fb = Double.valueOf(b);
+            fb = Double.parseDouble(b);
         } catch (NumberFormatException e) {
             fb = Double.MAX_VALUE;
             if (fa == fb)
@@ -88,14 +91,11 @@ class Comparators {
     static private String toKB(String size) {
         String[] split = size.split(" ");
         split[0] = split[0].replace(decimalSeparator, "");
-        switch (split[1]) {
-            case "GB":
-                return split[0] + "000000";
-            case "MB":
-                return split[0] + "000";
-            default:
-                return split[0];
-        }
+        return switch (split[1]) {
+            case "GB" -> split[0] + "000000";
+            case "MB" -> split[0] + "000";
+            default -> split[0];
+        };
     }
 
     static final Comparator<String> sizeComparator = (a, b) -> longComparator.compare(toKB(a), toKB(b));

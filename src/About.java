@@ -4,59 +4,50 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.program.Program;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Dialog;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
 
 public class About extends Dialog {
-	private Shell shell;
-	private Composite composite;
-
-	public About(Shell parent, int style, GUI gui) {
+	public About(Shell parent) {
 		super(parent, SWT.NONE);
-		this.shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+		Shell shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 		shell.setText("About");
-		shell.setLayout(new GridLayout(1, false));
+		shell.setLayout(new GridLayout(1, true));
+		ShellHelpers.setShellMargin(shell);
 
-		Composite composite = new Composite(shell, SWT.NONE);
-		composite.setLayout(new GridLayout(1, false));
-		this.composite = composite;
-
-		Label titleLabel = createCenteredLabel("PS4 PKG Manager");
+		Label titleLabel = createLabel(shell, SWT.CENTER, "PS4 PKG Manager");
 		setFontScalingFactor(titleLabel, 2);
 
-		createCenteredLabel("Copyright (c) 2024 hippie68");
-		createCenteredLabel("Release #" + Version.currentVersion);
+		createLabel(shell, SWT.CENTER, "Copyright \u00a9 2025 hippie68");
+		createLabel(shell, SWT.CENTER, "Release #" + Version.currentVersion);
 
-		new Label(composite, SWT.NONE);
-
-		createLink("Settings and database location: <a>" + gui.dataDirectory + "</a>",
-			e -> Program.launch(gui.dataDirectory));
-		createLink("Project homepage: <a>https://github.com/hippie68/ps4-pkg-manager</a>",
+		new Label(shell, SWT.NONE);
+		Runtime.getRuntime().gc();
+		long memoryUsage = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
+		createLabel(shell, SWT.LEFT, "RAM usage: " + memoryUsage + " MiB");
+		createLink(shell, "Settings and database location: <a>" + GUI.dataDirectory + "</a>",
+			e -> Program.launch(GUI.dataDirectory));
+		createLink(shell, "Project homepage: <a>https://github.com/hippie68/ps4-pkg-manager</a>",
 			e -> Program.launch("https://github.com/hippie68/ps4-pkg-manager"));
 
+		new Label(shell, SWT.NONE);
+		ShellHelpers.createDialogButtons(shell, SWT.CENTER, new DialogButton("Close", e -> shell.close()));
+
 		shell.pack();
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 
-	private Label createCenteredLabel(String text) {
-		Label label = new Label(composite, SWT.CENTER);
+	private Label createLabel(Composite parent, int style, String text) {
+		Label label = new Label(parent, style);
 		label.setText(text);
-		label.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
+		label.setLayoutData(new GridData(style, SWT.CENTER, true, false));
 		return label;
 	}
 
-	private Link createLink(String text, Listener listener) {
-		Link link = new Link(composite, SWT.NONE);
+	private void createLink(Shell shell, String text, Listener listener) {
+		Link link = new Link(shell, SWT.NONE);
 		link.setText(text);
 		link.addListener(SWT.Selection, listener);
-		return link;
 	}
 
 	private void setFontScalingFactor(Control control, double factor) {
@@ -65,6 +56,5 @@ public class About extends Dialog {
 		fd[0].setStyle(SWT.BOLD);
 		control.setFont(new Font(Display.getCurrent(), fd[0]));
 		control.getFont().dispose();
-		// TODO: is everything properly disposed?
 	}
 }

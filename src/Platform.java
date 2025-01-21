@@ -11,7 +11,7 @@ public class Platform {
     public static final String RIGHT_CLICK_TERM;
     public static final int SORT_DIRECTION_ASCENDING;
     public static final int SORT_DIRECTION_DESCENDING;
-    public static final boolean isWindows = PLATFORM == "win32";
+    public static final boolean isWindows = PLATFORM.equals("win32");
     public static final boolean isMac = System.getProperty("os.name").toLowerCase().startsWith("mac");
 
     public static final String MOD1;
@@ -19,7 +19,7 @@ public class Platform {
     private static final String MOD3 = "Alt";
 
     static {
-        if (PLATFORM == "gtk" || PLATFORM == "motif") { // Unix
+        if (PLATFORM.equals("gtk") || PLATFORM.equals("motif")) { // Unix
             SORT_DIRECTION_ASCENDING = SWT.DOWN;
             SORT_DIRECTION_DESCENDING = SWT.UP;
             DIRECTORY_TERM = "Directory";

@@ -83,7 +83,7 @@ public class ChangeFtpPathDialog {
 		});
 
 		shell.pack();
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 

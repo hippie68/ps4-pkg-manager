@@ -11,12 +11,9 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.MenuDetectEvent;
-import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.BorderData;
 import org.eclipse.swt.layout.BorderLayout;
 import org.eclipse.swt.layout.GridData;
@@ -50,14 +47,14 @@ public class GUI {
 	private Label progressIndicator;
 	public Table previousTable;
 
-	public String dataDirectory = System.getProperty("user.home") + switch (SWT.getPlatform()) {
+	public static String dataDirectory = System.getProperty("user.home") + switch (SWT.getPlatform()) {
 		case "win32" -> "/AppData/PKG Manager";
 		case "cocoa" -> "/Library/Application Support/PKG Manager";
 		default -> "/.pkg-manager";
 	};
 	private final String settingsPath = dataDirectory + "/ui.properties";
 	private final String actionsPath = dataDirectory + "/actions.txt";
-	private final String databasePath = dataDirectory + "/pkgs.db";;
+	private final String databasePath = dataDirectory + "/pkgs.db";
 
 	public static void main(String[] args) {
 		try {
@@ -90,10 +87,9 @@ public class GUI {
 				t.queue.push(null);
 
 			if (isProcessingData(true)
-				&& new YesNoDialog("Please Confirm", "Data is still being processed.\nWait for it to finish?")
-					.open() == true)
+				&& new YesNoDialog("Please Confirm", "Data is still being processed.\nWait for it to finish?").open()) {
 				new ExitMessage(shell, "Processing remaining data and saving application state...");
-			else {
+			} else {
 				// Force table threads to return now.
 				for (TabContent t : tabContents)
 					t.tableThread.interrupt();
@@ -136,7 +132,7 @@ public class GUI {
 
 		// Check for updates before opening shell.
 		Thread updateThread = new Thread(() -> {
-			if (Settings.checkUpdates == true) {
+			if (Settings.checkUpdates) {
 				int ret = Version.checkForUpdates();
 				// TODO: make this unobtrusive once the beta has ended.
 				if (ret == 0)
@@ -149,6 +145,7 @@ public class GUI {
 		while (!shell.isDisposed())
 			if (!display.readAndDispatch())
 				display.sleep();
+		display.dispose();
 	}
 
 	/** Returns the GUI's shell. */
@@ -182,7 +179,7 @@ public class GUI {
 			dialog.open();
 			String[] fileNames = dialog.getFileNames();
 			String directory = dialog.getFilterPath();
-			String paths[] = new String[fileNames.length];
+			String[] paths = new String[fileNames.length];
 			for (int i = 0; i < fileNames.length; i++)
 				paths[i] = directory + System.getProperty("file.separator") + fileNames[i];
 
@@ -292,10 +289,10 @@ public class GUI {
 			TabContent tabContent = getCurrentTabContent();
 			Table table = tabContent.getTable();
 			TableItem[] items = table.getItems();
-			String[] synchedDirs = tabContent.watcherThread.getSynchedDirs();
+			String[] synchedDirs = tabContent.watcherThread.getSyncedDirs();
 			table.deselectAll();
 			if (synchedDirs.length != 0) {
-				int[] synchedDirsRecursionState = tabContent.watcherThread.getSynchedDirsRecursionState();
+				int[] synchedDirsRecursionState = tabContent.watcherThread.getSyncedDirsRecursionState();
 				for (TableItem item : items) {
 					PS4PKG pkg = (PS4PKG) item.getData();
 					for (int i = 0; i < synchedDirs.length; i++)
@@ -316,12 +313,12 @@ public class GUI {
 			TabContent tabContent = getCurrentTabContent();
 			Table table = tabContent.getTable();
 			TableItem[] items = table.getItems();
-			String[] synchedDirs = tabContent.watcherThread.getSynchedDirs();
+			String[] synchedDirs = tabContent.watcherThread.getSyncedDirs();
 			if (synchedDirs.length == 0)
 				table.selectAll();
 			else {
 				table.deselectAll();
-				int[] synchedDirsRecursionState = tabContent.watcherThread.getSynchedDirsRecursionState();
+				int[] synchedDirsRecursionState = tabContent.watcherThread.getSyncedDirsRecursionState();
 				for (TableItem item : items) {
 					PS4PKG pkg = (PS4PKG) item.getData();
 					for (int i = 0; i < synchedDirs.length; i++)
@@ -354,7 +351,7 @@ public class GUI {
 
 		MenuItem mntmAbout = new MenuItem(menuHelp, SWT.NONE);
 		mntmAbout.setText("&About");
-		mntmAbout.addListener(SWT.Selection, e -> new About(shell, SWT.NONE, this));
+		mntmAbout.addListener(SWT.Selection, e -> new About(shell));
 	}
 
 	/** Returns an array containing all TabContents. */
@@ -472,7 +469,7 @@ public class GUI {
 	/**
 	 * Prints the currently selected PKG file name(s) on the status bar. Normally this method is triggered
 	 * automatically. But if the PKG selection was done programmatically, for the status to appear this function must be
-	 * explicitly called."
+	 * explicitly called.
 	 *
 	 * @param items the table items that the status bar should tell about. If null, the status bar will be empty.
 	 */
@@ -500,14 +497,14 @@ public class GUI {
 	}
 
 	private void saveGUIState() {
-		if (createDataDirectory() == false) {
+		if (!createDataDirectory()) {
 			RetryAbortBox box;
 			boolean success = false;
 			do
 				box = new RetryAbortBox(shell, "Error",
 					String.format("Could not create the application directory\n%s", dataDirectory));
-			while (box.open() == SWT.RETRY && (success = createDataDirectory()) == false);
-			if (success == false)
+			while (box.open() == SWT.RETRY && !(success = createDataDirectory()));
+			if (!success)
 				return;
 		}
 
@@ -584,8 +581,8 @@ public class GUI {
 
 		// Save synchronized directories, delimited by null characters.
 		for (int i = 0; i < tabContents.length; i++) {
-			String[] synchedDirs = tabContents[i].watcherThread.getSynchedDirs();
-			int[] synchedDirsRecursions = tabContents[i].watcherThread.getSynchedDirsRecursionState();
+			String[] synchedDirs = tabContents[i].watcherThread.getSyncedDirs();
+			int[] synchedDirsRecursions = tabContents[i].watcherThread.getSyncedDirsRecursionState();
 			props.setProperty(i + "_synced_dirs", String.join("\0", synchedDirs));
 			props.setProperty(i + "_synced_dirs_recursions", Arrays.toString(synchedDirsRecursions));
 		}
@@ -593,6 +590,7 @@ public class GUI {
 		try {
 			props.store(new FileWriter(settingsPath), "PS4 PKG Manager user interface settings");
 		} catch (IOException e) {
+			e.printStackTrace();
 		}
 
 		// Save PKG database -------------------------------------------------------------------------------------------
@@ -612,7 +610,7 @@ public class GUI {
 		String[] temp = property.replace("[", "").replace("]", "").split(", ");
 		int[] array = new int[temp.length];
 		for (int i = 0; i < temp.length; i++)
-			array[i] = Integer.valueOf(temp[i]);
+			array[i] = Integer.parseInt(temp[i]);
 		return array;
 	}
 
@@ -638,8 +636,8 @@ public class GUI {
 		// Load settings -----------------------------------------------------------------------------------------------
 
 		try {
-			Settings.checkUpdates = Boolean.valueOf(props.getProperty("check_updates"));
-			Settings.shareColumns = Boolean.valueOf(props.getProperty("share_columns"));
+			Settings.checkUpdates = Boolean.parseBoolean(props.getProperty("check_updates"));
+			Settings.shareColumns = Boolean.parseBoolean(props.getProperty("share_columns"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -652,7 +650,7 @@ public class GUI {
 		}
 
 		try {
-			Settings.titleLanguage = Integer.valueOf(props.getProperty("title_language"));
+			Settings.titleLanguage = Integer.parseInt(props.getProperty("title_language"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -665,11 +663,32 @@ public class GUI {
 			int tableCount;
 			int columnCount;
 			try {
-				tableCount = Integer.valueOf(props.getProperty("table_count"));
-				columnCount = Integer.valueOf(props.getProperty("column_count"));
+				tableCount = Integer.parseInt(props.getProperty("table_count"));
+				columnCount = Integer.parseInt(props.getProperty("column_count"));
 			} catch (Exception e) {
 				e.printStackTrace();
 				return -1;
+			}
+
+			// Do not load database when downgrading and newer columns are missing.
+			if (columnCount > Column.length) {
+				boolean reply = new YesNoDialog("The existing database is too new for this program version",
+					String.format("""
+						Sorry, but downgrading the database to this program version is not possible yet.
+						
+						If you start this program version by pressing "Yes", the existing database will be reset.
+						If you want to keep the database, press "No" and either use a newer program version or make
+						a backup of the database.
+						Database location: %s
+						
+						If you think this is a bug, please create an issue on GitHub:
+						https://github.com/hippie68/ps4-pkg-manager/issues
+						
+						Continue and reset the database?""", GUI.dataDirectory)).open();
+				if (reply)
+					return -1;
+				else
+					System.exit(1);
 			}
 
 			for (int i = 0; i < tableCount; i++)
@@ -678,21 +697,29 @@ public class GUI {
 					String tabName = props.getProperty(i + "_tab_name");
 
 					// Load column order.
-					int[] columnOrder = propertyToIntArray(props.getProperty(i + "_column_order"));
+					int[] columnOrder = new int[Column.length];
+					for (int j = 0; j < Column.length; j++)
+						columnOrder[j] = j; // Sort by index...
+					System.arraycopy(propertyToIntArray(props.getProperty(i + "_column_order")),
+						0, columnOrder, 0, columnCount); // ...so columns added by a new program version come last.
 
 					// Load column width.
-					int[] columnWidth = propertyToIntArray(props.getProperty(i + "_column_width"));
-					if (Settings.shareColumns == true)
+					int[] columnWidth = Arrays.copyOf(propertyToIntArray(props.getProperty(i + "_column_width")),
+						Column.length);
+					if (Settings.shareColumns)
 						Settings.setSharedColumnWidths(Arrays.copyOf(columnWidth, columnWidth.length));
 
 					// Load column visibility.
-					int[] columnVisibility = propertyToIntArray(props.getProperty(i + "_column_visibility"));
+					int[] columnVisibility = Arrays.copyOf(propertyToIntArray(props.getProperty(i + "_column_visibility")),
+						Column.length);
 
 					// Load sort column.
-					int sortColumnIndex = Integer.valueOf(props.getProperty(i + "_sort_column"));
+					int sortColumnIndex = Integer.parseInt(props.getProperty(i + "_sort_column"));
+					if (!(sortColumnIndex < Column.length))
+						sortColumnIndex = Column.length;
 
 					// Load sort direction.
-					int sortDirection = Integer.valueOf(props.getProperty(i + "_sort_direction"));
+					int sortDirection = Integer.parseInt(props.getProperty(i + "_sort_direction"));
 
 					// Use the acquired data to create a new TabContent.
 					TabContent tabContent = createNewTab(null);
@@ -711,9 +738,14 @@ public class GUI {
 
 					// If the current program version has additional columns, append them.
 					if (Column.length > columnCount)
-						for (int j = columnCount; i < Column.length; i++) {
-							columns[j].setWidth(100);
-							columns[j].setData(100);
+						for (int j = columnCount; j < Column.length; j++) {
+							if (Column.get(j).enabledByDefault) {
+								columns[j].setWidth(100);
+								columns[j].setData(100);
+							} else {
+								columns[j].setWidth(0);
+								columns[j].setData(100);
+							}
 						}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -722,7 +754,7 @@ public class GUI {
 			// Load currently selected tab.
 			if (tableCount > 1)
 				try {
-					int selectionIndex = Integer.valueOf(props.getProperty("selected_tab"));
+					int selectionIndex = Integer.parseInt(props.getProperty("selected_tab"));
 					tabFolder.setSelection(selectionIndex);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -735,8 +767,8 @@ public class GUI {
 			int x, y;
 			String windowSize = props.getProperty("shell_size");
 			String[] size = windowSize.split("x");
-			x = Integer.valueOf(size[0]);
-			y = Integer.valueOf(size[1]);
+			x = Integer.parseInt(size[0]);
+			y = Integer.parseInt(size[1]);
 			shell.setSize(x, y);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -762,7 +794,7 @@ public class GUI {
 				int[] syncedDirsRecursions = propertyToIntArray(props.getProperty(i + "_synced_dirs_recursions"));
 				for (int j = 0; j < syncedDirs.length; j++) {
 					String dir = syncedDirs[j];
-					Boolean recursion = syncedDirsRecursions[j] == 1;
+					boolean recursion = syncedDirsRecursions[j] == 1;
 					tabContents[i].watcherThread.addDirectory(dir, recursion);
 				}
 
@@ -818,26 +850,21 @@ public class GUI {
 		Menu tabMenu = new Menu(tabFolder);
 
 		// Make tab folder's right-click menu detect the correct tab.
-		tabFolder.addMenuDetectListener(new MenuDetectListener() {
-			@Override
-			public void menuDetected(MenuDetectEvent e) {
-				Point pt = display.getCursorLocation();
-				pt = tabFolder.toControl(pt);
-				TabItem item = tabFolder.getItem(pt); // TODO: won't select the tab item if near its borders.
-														 // Try the map method?
-				if (item == null) {
-					// e.doit = false;
-					for (int i = 1; i < tabMenu.getItemCount(); i++)
-						tabMenu.getItem(i).setEnabled(false);
-					return;
-				} else {
-					tabFolder.setData("menu_origin", item); // Used to retrieve the TabItem the right-click originated
-															 // in.
-					for (int i = 1; i < tabMenu.getItemCount(); i++)
-						tabMenu.getItem(i).setEnabled(true);
-				}
-			}
-		});
+		tabFolder.addMenuDetectListener(e -> {
+            Point pt = display.getCursorLocation();
+            pt = tabFolder.toControl(pt);
+            TabItem item = tabFolder.getItem(pt); // TODO: won't select the tab item if near its borders.
+                                                  // Try the map method?
+            if (item == null) {
+                // e.doit = false;
+                for (int i = 1; i < tabMenu.getItemCount(); i++)
+                    tabMenu.getItem(i).setEnabled(false);
+            } else {
+                tabFolder.setData("menu_origin", item); // Used to retrieve the TabItem the right-click originated in.
+                for (int i = 1; i < tabMenu.getItemCount(); i++)
+                    tabMenu.getItem(i).setEnabled(true);
+            }
+        });
 
 		// Create tab folder's right-click menu.
 
@@ -1022,10 +1049,8 @@ public class GUI {
 	private void removeTab(TabItem item) {
 		// Ask for confirmation if the table is not empty.
 		if (((TabContent) item.getControl()).getTable().getItemCount() != 0) {
-			YesNoDialog dialog = new YesNoDialog("Close Tab",
-				"Do you really want to close the tab \"" + item.getText() + "\"?\nThis can't be undone.");
-			boolean reply = dialog.open();
-			if (reply == false)
+			if (! new YesNoDialog("Close Tab",
+				"Do you really want to close the tab \"" + item.getText() + "\"?\nThis can't be undone.").open())
 				return;
 		}
 
@@ -1040,19 +1065,5 @@ public class GUI {
 			tabFolder = null;
 			shell.layout();
 		}
-	}
-
-	/** Centers a shell on its parent. Must be called after shell.pack() and before shell.open(). */
-	public static void centerShell(Shell shell) {
-		Rectangle parentSize;
-		Composite parent = shell.getParent();
-		if (parent == null)
-			return;
-		else
-			parentSize = shell.getParent().getBounds();
-		Rectangle shellSize = shell.getBounds();
-		int x = (parentSize.width - shellSize.width) / 2 + parentSize.x;
-		int y = (parentSize.height - shellSize.height) / 2 + parentSize.y;
-		shell.setLocation(new Point(x, y));
 	}
 }

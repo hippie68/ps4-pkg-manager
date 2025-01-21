@@ -40,16 +40,16 @@ public class WatcherThread extends Thread {
 
 	private static final int DIRCHECKER_POLLING_INTERVAL = 3000;
 
-	private TabContent tabContent;
-	private ArrayList<WatchKey> watchKeys = new ArrayList<>();
-	private ArrayList<SynchronizedDirectory> synchronizedDirectories = new ArrayList<>(); // User-provided list of
+	private final TabContent tabContent;
+	private final ArrayList<WatchKey> watchKeys = new ArrayList<>();
+	private final ArrayList<SynchronizedDirectory> synchronizedDirectories = new ArrayList<>(); // User-provided list of
 																							 // directories.
 
 	// Files matching these extensions are watched.
-	public static Set<String> fileNameExtensions = new HashSet<String>(
-		List.of(".pkg", ".part", ".crdownload", ".download", ".opdownload", ".!ut", ".!bt", ".!qB")); // TODO: make
-																										 // the list
-																										 // customizable.
+	public static Set<String> fileNameExtensions = new HashSet<>(
+            List.of(".pkg", ".part", ".crdownload", ".download", ".opdownload", ".!ut", ".!bt", ".!qB")); // TODO: make
+																										  // the list
+																										  // customizable.
 	WatchService watchService;
 
 	public WatcherThread(TabContent tabContent) {
@@ -160,10 +160,9 @@ public class WatcherThread extends Thread {
 					for (SynchronizedDirectory syncedDir : synchronizedDirectories)
 						if (path.startsWith(syncedDir.dir)) {
 							addWatchKey(path.toString());
-							continue;
+							break;
 						}
-
-					continue; // Don't watch it.
+					continue;
 				}
 			}
 			// printWatchedDirectories(); // DEBUG
@@ -263,7 +262,7 @@ public class WatcherThread extends Thread {
 
 		for (SynchronizedDirectory syncedDir : synchronizedDirectories) {
 			addWatchKey(syncedDir.dir);
-			if (syncedDir.isRecursive == true) {
+			if (syncedDir.isRecursive) {
 				Set<String> directories = getSubdirectories(syncedDir.dir);
 				for (String dir : directories)
 					addWatchKey(dir);
@@ -360,7 +359,7 @@ public class WatcherThread extends Thread {
 	}
 
 	/** Returns the currently synchronized directories. */
-	public synchronized String[] getSynchedDirs() {
+	public synchronized String[] getSyncedDirs() {
 		String[] dirs = new String[synchronizedDirectories.size()];
 		for (int i = 0; i < synchronizedDirectories.size(); i++)
 			dirs[i] = synchronizedDirectories.get(i).dir;
@@ -368,10 +367,10 @@ public class WatcherThread extends Thread {
 	}
 
 	/**
-	 * Returns the currently synchronized directories's recursion state, which is supposed to be iterated over together
-	 * with getSynchedDirs().
+	 * Returns the currently synchronized directories' recursion state, which is supposed to be iterated over together
+	 * with getSyncedDirs().
 	 */
-	public synchronized int[] getSynchedDirsRecursionState() {
+	public synchronized int[] getSyncedDirsRecursionState() {
 		int[] recursions = new int[synchronizedDirectories.size()];
 		for (int i = 0; i < synchronizedDirectories.size(); i++)
 			recursions[i] = synchronizedDirectories.get(i).isRecursive ? 1 : 0;

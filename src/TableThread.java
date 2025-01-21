@@ -38,7 +38,7 @@ public class TableThread extends Thread {
 		};
 
 		// Get Version.
-		String version = pkg.getChangelogVersion();
+		String version;
 		if ((version = pkg.getChangelogVersion()) == null && (version = pkg.getSFOValue("APP_VER")) == null
 			&& (version = pkg.getSFOValue("VERSION")) == null)
 			version = DATA_MISSING;
@@ -97,6 +97,13 @@ public class TableThread extends Thread {
 					+ system_ver.substring(4, 6);
 		}
 
+		// Get fake status.
+		String fake = switch(pkg.isFake) {
+			case -1 -> "";
+			case 1 -> "\u2713";
+			default -> DATA_MISSING;
+		};
+
 		// Get Backport (requires sdk to be set).
 		String backport;
 		if (sdk.compareTo("5.05") == 0 || pkg.filename.toLowerCase().indexOf("bp") != -1
@@ -141,6 +148,7 @@ public class TableThread extends Thread {
 				case REGION -> region;
 				case TYPE -> type;
 				case VERSION -> version;
+				case FAKE -> fake;
 				case BACKPORT -> backport;
 				case SDK -> sdk;
 				case FIRMWARE -> fw;
@@ -148,9 +156,9 @@ public class TableThread extends Thread {
 					if (pkg.header.pkg_size > 1000000000)
 						yield String.format("%.02f GB", (double) pkg.header.pkg_size / 1000000000);
 					else if (pkg.header.pkg_size > 1000000)
-						yield String.format("%d MB", Math.round(pkg.header.pkg_size / 1000000));
+						yield String.format("%d MB", Math.round((double) pkg.header.pkg_size / 1000000));
 					else
-						yield String.format("%d KB", Math.round(pkg.header.pkg_size / 1000));
+						yield String.format("%d KB", Math.round((double) pkg.header.pkg_size / 1000));
 				}
 				case RELEASE_TAGS -> releaseTags;
 				case COMPATIBILITY_CHECKSUM -> checksum;
@@ -233,9 +241,8 @@ public class TableThread extends Thread {
 								throw new InterruptedException();
 						}
 					}
-				} else if (obj instanceof PS4PKG) {
-					PS4PKG pkg = (PS4PKG) obj;
-					insertPkgIntoTable(pkg);
+				} else if (obj instanceof PS4PKG pkg) {
+                    insertPkgIntoTable(pkg);
 				}
 			} catch (InterruptedException e) {
 				setIsProcessing(false);

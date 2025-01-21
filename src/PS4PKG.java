@@ -1,14 +1,17 @@
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 // See https://www.psdevwiki.com/ps4/Package_Files#File_Header
 // TODO: change name to "PS4PKGHeader" if this class ever needs to increase its serialVersionUID.
@@ -73,7 +76,8 @@ public class PS4PKG implements Serializable {
 	PS4PKGEntry[] entries;
 	SFOParameter[] params;
 	String changelog;
-	String digests[];
+	String[] digests;
+	byte isFake; // -1: not fake, 1: fake:, 0: unknown (happens when older class versions are deserialized)
 
 	public PS4PKG(String path) throws Exception {
 		Path p = Paths.get(path);
@@ -81,8 +85,8 @@ public class PS4PKG implements Serializable {
 			throw new Exception("Not a regular file");
 
 		this.path = path;
-		this.directory = Paths.get(path).getParent().toString();
-		this.filename = Paths.get(path).getFileName().toString();
+		this.directory = p.getParent().toString();
+		this.filename = p.getFileName().toString();
 
 		try (var file = new RandomAccessFile(path, "r"); var channel = file.getChannel()) {
 			MappedByteBuffer mbb = channel.map(FileChannel.MapMode.READ_ONLY, 0,
@@ -100,6 +104,7 @@ public class PS4PKG implements Serializable {
 		loadHeader(bb);
 		loadEntries(bb);
 		loadDigests(bb);
+		loadFakeStatus(bb);
 		loadParamSFO(bb);
 		loadChangelog(bb);
 	}
@@ -122,7 +127,7 @@ public class PS4PKG implements Serializable {
 
 		byte[] content_id = new byte[36];
 		bb.get(0x040, content_id);
-		header.content_id = new String(content_id, "UTF-8");
+		header.content_id = new String(content_id, StandardCharsets.UTF_8);
 
 		header.drm_type = bb.getInt(0x070);
 		header.content_type = bb.getInt(0x074);
@@ -166,7 +171,7 @@ public class PS4PKG implements Serializable {
 		header.pkg_digest = Hex.byteArrayToHexString(digest);
 	}
 
-	private void loadEntries(ByteBuffer bb) throws UnsupportedEncodingException {
+	private void loadEntries(ByteBuffer bb) {
 		byte[] filename_table = null;
 
 		// Read entries
@@ -201,7 +206,7 @@ public class PS4PKG implements Serializable {
 				int strlen = 0;
 				for (int j = filename_offset; filename_table[j] != 0; j++, strlen++)
 					;
-				entries[i].filename = new String(filename_table, filename_offset, strlen, "UTF-8");
+				entries[i].filename = new String(filename_table, filename_offset, strlen, StandardCharsets.UTF_8);
 			}
 		}
 	}
@@ -219,7 +224,47 @@ public class PS4PKG implements Serializable {
 		}
 	}
 
-	private void loadParamSFO(ByteBuffer bb) throws UnsupportedEncodingException {
+	private byte[] genKey(byte[] contentID) {
+		MessageDigest digest;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+
+		byte[] data = new byte[96];
+		byte[] checksum1 = digest.digest(new byte[4]);
+		byte[] checksum2 = digest.digest(contentID);
+		byte[] passcode = new byte[32];
+		Arrays.fill(passcode, (byte) 0x30);
+		System.arraycopy(checksum1, 0, data, 0, 32);
+		System.arraycopy(checksum2, 0, data, 32, 32);
+		System.arraycopy(passcode, 0, data, 64, 32);
+
+		byte[] key = digest.digest(data);
+		byte[] checksum = digest.digest(key);
+		for (int i = 0; i < 32; i ++)
+			checksum[i] = (byte) (key[i] ^ checksum[i]);
+		return checksum;
+	}
+
+	private void loadFakeStatus(ByteBuffer bb)  {
+		ByteBuffer keys = getFile(0x10, bb);
+		keys.position(0x20);
+		byte[] key = new byte[32];
+		keys.get(key);
+
+		byte[] contentID = new byte[48];
+		bb.get(0x40, contentID);
+		byte[] checksum = genKey(contentID);
+
+		if (Arrays.equals(key, checksum))
+			isFake = 1;
+		else
+			isFake = -1;
+	}
+
+	private void loadParamSFO(ByteBuffer bb) {
 		ByteBuffer sfo = getFile(0x1000, bb);
 		if (sfo == null)
 			return;
@@ -244,21 +289,21 @@ public class PS4PKG implements Serializable {
 			int strlen = 0;
 			for (int j = keyTableOffset + keyOffset; arr[j] != 0; j++, strlen++)
 				;
-			params[i].name = new String(arr, keyTableOffset + keyOffset, strlen, "UTF-8");
+			params[i].name = new String(arr, keyTableOffset + keyOffset, strlen, StandardCharsets.UTF_8);
 
 			if (fmt == 0x404)
 				params[i].value = String.format("0x%08X", sfo.getInt(dataTableOffset + dataOffset));
 			else
-				params[i].value = new String(arr, dataTableOffset + dataOffset, len - 1, "UTF-8");
+				params[i].value = new String(arr, dataTableOffset + dataOffset, len - 1, StandardCharsets.UTF_8);
 		}
 	}
 
-	private void loadChangelog(ByteBuffer bb) throws IOException {
+	private void loadChangelog(ByteBuffer bb) {
 		ByteBuffer changelog = getFile(0x1260, bb);
 		if (changelog == null)
 			return;
 
-		this.changelog = new String(changelog.array(), "UTF-8");
+		this.changelog = new String(changelog.array(), StandardCharsets.UTF_8);
 	}
 
 	/** Searches for a file that has the specified ID and returns it as a ByteBuffer. */

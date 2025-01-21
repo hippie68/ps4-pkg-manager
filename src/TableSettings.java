@@ -20,11 +20,9 @@ public class TableSettings extends Dialog {
 		Shell shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 		shell.setText(getText());
 		shell.setLayout(new GridLayout(1, false));
+		ShellHelpers.setShellMargin(shell);
 
-		Composite settings = new Composite(shell, SWT.NONE);
-		settings.setLayout(new GridLayout(1, false));
-
-		Group syncGroup = new Group(settings, SWT.NONE);
+		Group syncGroup = new Group(shell, SWT.NONE);
 		syncGroup.setText(Platform.DIRECTORY_TERM + " Synchronization");
 		syncGroup.setLayout(new GridLayout(3, true));
 
@@ -34,8 +32,8 @@ public class TableSettings extends Dialog {
 		table.setLayoutData(tableLayoutData);
 
 		// Add user-provided directories to table.
-		String[] dirs = tabContent.watcherThread.getSynchedDirs();
-		int[] checked = tabContent.watcherThread.getSynchedDirsRecursionState();
+		String[] dirs = tabContent.watcherThread.getSyncedDirs();
+		int[] checked = tabContent.watcherThread.getSyncedDirsRecursionState();
 		for (int i = 0; i < dirs.length; i++) {
 			TableItem item = new TableItem(table, SWT.NONE);
 			item.setText(dirs[i]);
@@ -76,35 +74,25 @@ public class TableSettings extends Dialog {
 		commentLabelLayoutData.horizontalSpan = 3;
 		commentLabel.setLayoutData(commentLabelLayoutData);
 
-		Composite buttons = new Composite(shell, SWT.NONE);
-		buttons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-		buttons.setLayout(new GridLayout(2, false));
+		ShellHelpers.createDialogButtons(shell, SWT.RIGHT, new DialogButton[] {
+			new DialogButton("Cancel", e -> shell.close()),
+			new DialogButton("Apply and Close", e -> {
+				TableItem[] items = table.getItems();
+				if (items.length != 0) {
+					for (TableItem item : items)
+						tabContent.watcherThread.addDirectory(item.getText(0), item.getChecked());
 
-		Button cancel = new Button(buttons, SWT.PUSH);
-		cancel.setText("Cancel");
-		cancel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
-		cancel.addListener(SWT.Selection, e -> shell.close());
+					tabContent.watcherThread.generateWatchKeys();
+					if (!tabContent.watcherThread.isAlive())
+						tabContent.watcherThread.start();
+				}
 
-		Button close = new Button(buttons, SWT.PUSH);
-		close.setText("Apply and Close");
-		close.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-		close.addListener(SWT.Selection, e -> {
-			TableItem[] items = table.getItems();
-			if (items.length != 0) {
-				for (TableItem item : items)
-					tabContent.watcherThread.addDirectory(item.getText(0), item.getChecked());
-
-				tabContent.watcherThread.generateWatchKeys();
-				if (!tabContent.watcherThread.isAlive())
-					tabContent.watcherThread.start();
-			}
-
-			shell.close();
+				shell.close();
+			})
 		});
 
-		shell.setDefaultButton(close);
 		shell.pack();
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 }

@@ -20,6 +20,7 @@ public class AddFtpFilesDialog {
 	Label connectionStatus;
 	ProgressBar progressBar;
 
+	// TODO: extract long code blocks to separate methods.
 	public AddFtpFilesDialog(Shell parent, GUI gui) {
 		TabContent tabContent = gui.getCurrentTabContent();
 
@@ -100,7 +101,7 @@ public class AddFtpFilesDialog {
 			shell.pack();
 
 			String ip = ipCombo.getText();
-			Integer port = Integer.valueOf(portCombo.getText());
+			int port = Integer.parseInt(portCombo.getText());
 			this.ftpThread = new Thread(() -> {
 				FtpClient client = new FtpClient();
 				try {
@@ -245,7 +246,7 @@ public class AddFtpFilesDialog {
 
 		shell.setDefaultButton(connect);
 		shell.pack();
-		GUI.centerShell(shell);
+		ShellHelpers.centerShell(shell);
 		shell.open();
 	}
 }
