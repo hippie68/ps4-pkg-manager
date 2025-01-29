@@ -2,6 +2,7 @@
 
 swt_dir=swt
 #swt_version=
+java_version=17
 
 # SWT libraries in the form of swt.jar files for different operating systems can
 # be extracted from the "SWT Binary and Source" downloads of specific Eclipse
@@ -65,7 +66,8 @@ build() {
   local class_dir="$build_dir/classes"
 
   # Compile the project's source code.
-  javac -cp "src:$swt_file" src/GUI.java -d "$class_dir" || exit 1
+  javac -cp "src:$swt_file" src/GUI.java -d "$class_dir" \
+      --release "$java_version" || exit 1
 
   # Extract required files from the platform's "swt.jar" file.
   local libs
