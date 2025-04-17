@@ -83,12 +83,19 @@ case $platform in
 esac
 
 # Check for dependencies.
-if hash zip; then
+if hash zip 2> /dev/null; then
     unsigner=zip
-elif hash 7z; then
+elif hash 7z 2> /dev/null; then
     unsigner=7z
 else
     error "This script requires either 7z or zip."
+fi
+if hash jar 2> /dev/null; then
+    jar_command=jar
+elif  hash jar.exe 2> /dev/null; then
+    jar_command=jar.exe
+else
+    error "This script requires the jar executable."
 fi
 
 # Collect all SWT download URLs.
@@ -129,7 +136,7 @@ for url in "${urls[@]}"; do
 
     # Extract src.zip and swt.jar from downloaded archive and unsign swt.jar.
     echo "Extracting to \"$output_dir\"..."
-    jar --extract --file="$temp_filename" src.zip swt.jar || exit 1
+    "$jar_command" --extract --file="$temp_filename" src.zip swt.jar || exit 1
     echo "Unsigning \"$output_dir/swt.jar\"..."
     if [[ $unsigner == 7z ]]; then
         7z d -tzip swt.jar "${signature_files[@]}" > /dev/null || exit 1
