@@ -92,6 +92,12 @@ public class PS4PKG implements Serializable {
 			MappedByteBuffer mbb = channel.map(FileChannel.MapMode.READ_ONLY, 0,
 				channel.size() > Integer.MAX_VALUE ? Integer.MAX_VALUE : channel.size());
 			load(mbb);
+
+            // Workaround to release the file handler.
+            if (Platform.isWindows) {
+                mbb = null;
+                System.gc();
+            }
 		}
 	}
 
