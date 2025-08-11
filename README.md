@@ -66,6 +66,8 @@ For example, to add SWT to an IntelliJ IDEA project after running the script wit
 
 To compile the project into a .jar file, have a look at the file `build.sh`. If it is necessary, we could try to change it from Bash to sh.
 
+Both scripts support SWT versions up to 4.35. SWT 4.36+ is currently not supported.
+
 The project is in dire need of supporters that use macOS. I don't have a Mac, so I don't know if the program in its current state works well and looks good on macOS. If you want to provide feedback or to become a maintainer, that would be much appreciated!
 
 Regarding the current code: Basically I am using this project to learn Java. It is my first Java program (an upgrade so to speak from https://github.com/hippie68/ps4-pkg-compatibility-checker), so bear with me if, to put it mildly, large parts of the code are not idiomatic yet.
