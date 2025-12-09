@@ -68,6 +68,38 @@ To compile the project into a .jar file, have a look at the file `build.sh`. If 
 
 Both scripts support SWT versions up to 4.35. SWT 4.36+ is currently not supported.
 
-The project is in dire need of supporters that use macOS. I don't have a Mac, so I don't know if the program in its current state works well and looks good on macOS. If you want to provide feedback or to become a maintainer, that would be much appreciated!
+## macOS Setup
+
+The helper scripts rely on GNU utilities that are not shipped with macOS by default. Before downloading SWT, install the required tools and run the downloader with the Homebrew versions:
+
+1. `brew install bash grep`
+2. `PATH="$(brew --prefix)/opt/grep/libexec/gnubin:$PATH" "$(brew --prefix)/bin/bash" download_swt.sh macos`
+
+The inline `PATH` update ensures the script can find GNU `grep`, and invoking the Homebrew `bash` provides the newer shell required by `download_swt.sh`.
+
+With the SWT files in place you can build the macOS jar locally:
+
+1. `chmod +x build.sh`
+2. `./build.sh macos`
+
+The script compiles against JDK 17, unpacks the SWT natives, and writes `build/macos/pkg_manager_macos.jar` for you to run or distribute.
+
+For Apple Silicon systems download the arm64 SWT bundle instead (`download_swt.sh macos-arm`) and build the matching jar with `./build.sh macos-arm`.
+
+### Running on macOS (Intel & Apple Silicon)
+
+SWT needs a Java 17 runtime that matches your architecture and must start on the first macOS thread. A typical Apple Silicon session looks like this:
+
+1. `export JAVA_HOME="$(/usr/libexec/java_home -v 17 --arch arm64)"`
+2. `"$JAVA_HOME/bin/java" -version` (confirm the output mentions `arm64`/`aarch64`).
+3. `"$JAVA_HOME/bin/java" -XstartOnFirstThread -jar build/macos-arm/pkg_manager_macos-arm.jar`
+
+If you prefer running the compiled classes directly, use `"$JAVA_HOME/bin/java" -XstartOnFirstThread -cp "build/macos-arm/classes:swt/4.37/macos-arm/swt.jar" GUI`.
+
+On first launch the application creates its data directory under `~/Library/Application Support/PKG Manager/`; creating it manually ahead of time avoids warning logs about missing files.
+
+---
+
+If you want to provide feedback or to become a maintainer, either for Linux, macOS, or Windows, that would be much appreciated!
 
 Regarding the current code: Basically I am using this project to learn Java. It is my first Java program (an upgrade so to speak from https://github.com/hippie68/ps4-pkg-compatibility-checker), so bear with me if, to put it mildly, large parts of the code are not idiomatic yet.
