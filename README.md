@@ -98,6 +98,8 @@ If you prefer running the compiled classes directly, use `"$JAVA_HOME/bin/java" 
 
 On first launch the application creates its data directory under `~/Library/Application Support/PKG Manager/`; creating it manually ahead of time avoids warning logs about missing files.
 
-If you want to provide feedback or to become a maintainer, either for linux/macos or windows, that would be much appreciated!
+---
+
+If you want to provide feedback or to become a maintainer, either for Linux, macOS, or Windows, that would be much appreciated!
 
 Regarding the current code: Basically I am using this project to learn Java. It is my first Java program (an upgrade so to speak from https://github.com/hippie68/ps4-pkg-compatibility-checker), so bear with me if, to put it mildly, large parts of the code are not idiomatic yet.
