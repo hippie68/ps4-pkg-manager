@@ -90,7 +90,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 [[ -d "$swt_dir" ]] || error "Required SWT directory does not exist: \"$swt_dir\"."
-[[ -v 2 ]] && swt_version=$2
+[[ $# -ge 2 ]] && swt_version=$2
 [[ $swt_version == "" ]] && swt_version=$(get_highest_version_dir)
 [[ $swt_version == "" ]] && error "Could not find an SWT version directory in SWT directory \"$swt_dir\"."
 hash unzip 2> /dev/null || error "Required program \"unzip\" not available."
